@@ -63,9 +63,9 @@
   },
   "dependencies": {
     "dazzling-graph-progressive": "^0.4.0",
-    "joi": "^8.0.3",
+    "joi": "^8.0.4",
     "lodash": "^4.5.1",
-    "mathjs": "^2.7.0",
+    "mathjs": "^3.0.0",
     "string": "^3.3.1"
   }
 }
