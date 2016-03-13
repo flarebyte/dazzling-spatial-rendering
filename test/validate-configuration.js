@@ -25,7 +25,7 @@ test( 'validate-configuration should validate a list of strings', ( t ) => {
   const structure = {
     description : 'my description',
     type: 'strings',
-    tags: [ 'tag1' ],
+    tags: [ 'tag1', 'color:rgb=ffa9c3' ],
     constraints: [
       {
         min: 2,
@@ -211,7 +211,7 @@ test( 'validate-configuration should validate a list of positive integers', ( t 
     ]
   };
   const v1 = {
-    L: [ 12, 14, 100, 1034 ],
+    L: [ 12, 14, 0, 1034 ],
     description : 'some title for value',
     title : 'some desc for value',
     tags: [ 'curie:tag1' ]
@@ -232,7 +232,7 @@ test( 'validate-configuration should validate a list of positive integers', ( t 
     L: [ 1, -2, 3 ],
   } );
 
-  t.ok( e4.includes( 'must be a positive number' ), 'e4: ' + e4 );
+  t.ok( e4.includes( 'must be larger than or equal to 0' ), 'e4: ' + e4 );
 
   const e5 = validateStructureToSchema( structure, {
     L: [ 1, 2, 2 ],
@@ -338,7 +338,7 @@ test( 'validate-configuration should validate a list of integers ij with facets'
   };
   const f = [ 'facet' ];
   const v1 = {
-    L: [ { i: 1, j: 23, f }, { i: -1, j: 24, f }, { i: 3, j: 2, f } ],
+    L: [ { i: 1, j: 23, f }, { i: -1, j: 0, f }, { i: 3, j: 2, f } ],
   };
   t.deepEqual( validateStructureToSchema( structure, v1 ), v1, 'v1' );
 

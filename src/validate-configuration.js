@@ -52,9 +52,9 @@ const authorSchema = Joi.object().keys( {
 } ).required();
 
 const constraint = Joi.object().keys( {
-  min: Joi.number().integer().positive().min( 1 ).default( 1 ).description( 'minimum size of the array' ),
-  max: Joi.number().integer().positive().default( 1000 ).greater( Joi.ref( 'min' ) ).description( 'maximum size of the array' ),
-  multiple: Joi.number().integer().positive().min( 1 ).default( 1 ).description( 'size of the array is a multiple' ),
+  min: Joi.number().integer().min( 1 ).default( 1 ).description( 'minimum size of the array' ),
+  max: Joi.number().integer().min( 1 ).default( 1000 ).greater( Joi.ref( 'min' ) ).description( 'maximum size of the array' ),
+  multiple: Joi.number().integer().min( 1 ).default( 1 ).description( 'size of the array is a multiple' ),
   flags: Joi.array().items( Joi.string().valid( [ 'uniq', 'opt', 'facets', 'pos' ] ) ).unique().optional(),
 } ).required();
 
@@ -95,7 +95,7 @@ const constraintOrDefault = ( c, structure ) => {
   const maybeUnique = v => flags.includes( 'uniq' ) ? v.unique() : v;
   const maybeOptional = v => flags.includes( 'opt' ) ? v.optional() : v;
   const maybeMultiple = v => c.multiple === 1 ? v : v.multiple( c.v );
-  const maybePositive = v => flags.includes( 'pos' ) ? v.positive() : v;
+  const maybePositive = v => flags.includes( 'pos' ) ? v.min( 0 ) : v;
   const multiple = c.multiple ? c.multiple : 1;
   const min = c.min ? multiple * c.min : multiple;
   const max = c.max ? multiple * c.max : 1000 * multiple;
@@ -139,7 +139,6 @@ const regexOfSpaceList = ( token, c ) => {
 
 const stringJoin = c => regexOfSpaceList( '\\S+', c );
 const intJoin = c => c.isPositive ? regexOfSpaceList( '\\d+', c ) : regexOfSpaceList( '-?\\d+', c );
-//const xJoin = c => c.isPositive ? `^\d+[/]\d*[1-9](\s\d+[/]\d*[1-9])${c.min2max}$` : `^[-]?\d+[/]\d*[1-9](\s[-]?\d+[/]\d*[1-9])${c.min2max}$`
 const xJoin = c => c.isPositive ? regexOfSpaceList( '\\d+/\\d*[1-9]', c ) : regexOfSpaceList( '[-]?\\d+/\\d*[1-9]', c );
 
 const joinOfString = ( v, c ) => joinOfType( v, c, stringJoin( c ) );
