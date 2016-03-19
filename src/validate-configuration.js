@@ -269,15 +269,19 @@ const structureToSchema = ( graphDao, structure ) => {
     description: descriptionSchema,
     comment: commentSchema,
     tags: tagsSchema
-  } ).required();
+  } );
 
   return schema;
 };
 
-const buildNativeSchema = graphDao => {
-  const native = graphDao => graphDao.valid().object().min( 1 ).required();
-  const renderer = graphDao => graphDao.valid().string().max( 4 ).required();
-  const nodeSelect = graphDao => graphDao.valid().string().max( 5 ).required();
+const buildNativeSchema = ( nativeMeta ) => {
+  const schemaNative = graphDao =>  {
+    return _.zipObject( nativeMeta.conf, _.fill( Array( nativeMeta.conf.length ), graphDao.valid().string().optional().max( 1000 ) ) );
+  };
+  const native = graphDao => graphDao.valid().object().keys( schemaNative( graphDao ) );
+  const schemaRenderers = graphDao =>  _.map( nativeMeta.rendering.structures, structure => structureToSchema( graphDao, structure ) );
+  const renderer = graphDao => graphDao.valid().array().items( schemaRenderers( graphDao ) );
+  const nodeSelect = renderer;
   return { native, renderer, nodeSelect };
 };
 
@@ -316,5 +320,5 @@ export default function ( conf ) {
   const assertValid = () => Joi.assert( conf, confSchema );
   const build = () => 'not yet';
 
-  return { assertValid, structureToSchema, build };
+  return { assertValid, structureToSchema, buildNativeSchema, build };
 }
