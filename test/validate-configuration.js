@@ -823,3 +823,11 @@ test( 'validate-configuration should validate the native sections', ( t ) => {
   t.ok( Joi.validate( { invalidKey: 'anyValue' }, nativeSchema.native( graphDao ) ).error.message.includes( '"invalidKey" is not allowed' ), 'invalid native' );
 
 } );
+
+test( 'validate-configuration should build configuration', ( t ) => {
+  t.plan( 2 );
+  const validateConf = validateConfiguration( config.valid );
+  const build = validateConf.build();
+  t.deepEqual( _.keys( build ).sort(), [ 'regexes', 'validators' ], 'root keys' );
+  t.deepEqual( _.keys( build.validators.natives ).sort(), [ 'native1' ], 'natives' );
+} );

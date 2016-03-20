@@ -41,7 +41,7 @@ const tagSchema = Joi.string().uri().min( 1 ).max( 255 ).description( 'tag' ).re
 const tagsSchema = Joi.array().items( tagSchema ).max( 20 ).optional();
 
 
-const regexAnyKey = '[A-Za-z0-9_-.:/#]{1,100}';
+const regexAnyKey = '[^*]{1,100}';
 
 const structureTypeKeys = _.keys( structureTypes );
 
@@ -285,40 +285,34 @@ const buildNativeSchema = ( nativeMeta ) => {
   return { native, renderer, nodeSelect };
 };
 
-const build = ( conf ) => {
-  validators = {
-    natives: {
-      metadata: {
-        native: graphDao => graphDao.valid().object().min( 1 ).required(),
-        renderer: graphDao => graphDao.valid().string().max( 4 ).required(),
-        nodeSelect: graphDao => graphDao.valid().string().max( 5 ).required()
-      },
-      path: {
-        native: graphDao => graphDao.valid().object().min( 2 ).required(),
-        renderer: graphDao => graphDao.valid().number().required(),
-        nodeSelect: graphDao => graphDao.valid().boolean().required()
-      }
-    },
+const buildConf = ( conf ) => {
+  const sep = '[_.-]';
+  const regexes = {
+    renderers: graphDao => `r${sep}${regexAnyKey}`,
+    transitions: graphDao => `${regexAnyKey}`,
+    transitionsItem: graphDao => `${regexAnyKey}`,
+    iterators: graphDao => `i${sep}${regexAnyKey}`,
+    aliases: graphDao => `${regexAnyKey}`,
+    aliasesItem: graphDao => `${regexAnyKey}`,
+    uniques: graphDao => `u${sep}${regexAnyKey}`,
+    nodes: graphDao => `${regexAnyKey}`
+  };
+  const nativesConf = _.flatten( _.map( conf.plugins, plugin => plugin.natives ) );
+  const nativesKeys = _.map( nativesConf,  nat => nat.name );
+  const nativesValidators = _.map( nativesConf,  nat => buildNativeSchema( nat ) );
+  const natives = _.zipObject( nativesKeys, nativesValidators );
+  const validators = {
+    natives,
     uniqueData: graphDao => graphDao.valid().object().min( 1 ).required(),
     transitionData: graphDao => graphDao.valid().number().required(),
     edgeData: graphDao => graphDao.valid().number().required()
-  };
-  regexes = {
-    renderers: graphDao => `${regexAnyKey}`,
-    transitions: graphDao => `${regexAnyKey}`,
-    transitionsItem: graphDao => `${regexAnyKey}`,
-    iterators: graphDao => `${regexAnyKey}`,
-    aliases: graphDao => `${regexAnyKey}`,
-    aliasesItem: graphDao => `${regexAnyKey}`,
-    uniques: graphDao => `${regexAnyKey}`,
-    nodes: graphDao => `${regexAnyKey}`
   };
   return { validators, regexes };
 };
 
 export default function ( conf ) {
   const assertValid = () => Joi.assert( conf, confSchema );
-  const build = () => 'not yet';
+  const build = () => buildConf( conf );
 
   return { assertValid, structureToSchema, buildNativeSchema, build };
 }
