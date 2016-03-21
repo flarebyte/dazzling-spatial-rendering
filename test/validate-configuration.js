@@ -829,5 +829,5 @@ test( 'validate-configuration should build configuration', ( t ) => {
   const validateConf = validateConfiguration( config.valid );
   const build = validateConf.build();
   t.deepEqual( _.keys( build ).sort(), [ 'regexes', 'validators' ], 'root keys' );
-  t.deepEqual( _.keys( build.validators.natives ).sort(), [ 'native1' ], 'natives' );
+  t.deepEqual( _.keys( build.validators.natives ).sort(), [ 'native1', 'native2A', 'native2B' ], 'natives' );
 } );
