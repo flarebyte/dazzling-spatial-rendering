@@ -1,0 +1,291 @@
+{
+ "natives": {
+  "native1": {
+   "sizeUnit": "any"
+  }
+ },
+ "renderers": {
+  "r.path8x8": {
+   "title": "8 by 8",
+   "description": "Matrix 8 by 8",
+   "comment": "Some comment",
+   "tags": [
+    "dc:title",
+    "other:tag22/a/b#main"
+   ],
+   "native": "native1",
+   "data": [{
+     "L": [ { "x": "1/2", "y": "1000/20001"}, { "x": "-1/2", "y": "-2/3"}, { "x": "3/4", "y": "4/4"} ]
+   }]
+  },
+  "r.path12x12": {
+   "native": "native2A",
+   "data": []
+  },
+  "r.path16x16": {
+   "native": "native2B",
+   "data": []
+  }
+ },
+ "transitions": {
+  "clr": {
+   "black": [],
+   "white": [],
+   "grey": []
+  },
+  "appearance": {
+   "smooth": [],
+   "grain": [],
+   "rough": []
+  }
+ },
+ "iterators": [
+  "i.texture"
+ ],
+ "aliases": {
+  "clr2": {
+   "blackish": "clr:black",
+   "greyish": "clr:grey"
+  }
+ },
+ "uniques": {
+  "u.rect1": {
+   "title": "one single child",
+   "description": "A single child",
+   "list": [
+    "1/1"
+   ],
+   "data": {
+    "mustHave": "something"
+   }
+  },
+  "u.rect2": {
+   "list": [
+    "1/2",
+    "2/2"
+   ],
+   "data": {
+    "mustHave": "something"
+   }
+  }
+ },
+ "nodes": {
+  "p1": {
+   "title": "root",
+   "description": "The root node",
+   "comment": "Some comment for root",
+   "select": [
+    {
+     "f": {
+      "allOf": [
+       "clr:black"
+      ]
+     },
+     "r": "r.path8x8",
+     "data": []
+    },
+    {
+     "f": {
+      "oneOf": [
+       "clr:grey"
+      ]
+     },
+     "r": "r.path12x12",
+     "data": []
+    }
+   ]
+  },
+  "p2": {
+   "title": "p2 title",
+   "description": "p2 description",
+   "tags": ["tag:A", "tag:B"],
+   "select": [
+    {
+     "f": {
+      "allOf": [
+       "clr:black"
+      ]
+     },
+     "r": "r.path8x8",
+     "data": []
+    },
+    {
+     "f": {
+      "allOf": [
+       "clr:white"
+      ],
+      "noneOf": [
+       "clr:black"
+      ]
+     },
+     "r": "r.path8x8",
+     "data": []
+    }
+   ]
+  },
+  "p3": {
+   "select": [
+    {
+     "f": {
+      "allOf": [
+       "clr:black"
+      ]
+     },
+     "r": "r.path8x8",
+     "data": []
+    }
+   ]
+  },
+  "p4": {
+   "select": [
+    {
+     "f": {
+      "allOf": [
+       "clr:black"
+      ]
+     },
+     "r": "r.path8x8",
+     "data": []
+    }
+   ]
+  },
+  "p4b": {
+   "select": [
+    {
+     "f": {
+      "allOf": [
+       "clr:black"
+      ]
+     },
+     "r": "r.path8x8",
+     "data": []
+    }
+   ]
+  },
+  "p5": {
+   "select": [
+    {
+     "f": {
+      "allOf": [
+       "clr:black"
+      ]
+     },
+     "r": "r.path8x8",
+     "data": []
+    }
+   ]
+  }
+ },
+ "edges": [
+  {
+   "title": "root",
+   "description": "The root edge",
+   "comment": "some comment for edge",
+   "s": "p1",
+   "d": "p2",
+   "t": [
+    {
+     "x": "*"
+    },
+    {
+     "a": "i.texture->start"
+    },
+    {
+     "d": "clr:black"
+    }
+   ],
+   "u": [
+    "u.rect1:1/1"
+   ],
+   "data": 10
+  },
+  {
+   "s": "p2",
+   "d": "p3",
+   "t": [],
+   "u": [
+    "u.rect1:1/1"
+   ],
+   "data": 10
+  },
+  {
+   "s": "p3",
+   "d": "p4",
+   "tags": ["tag:C"],
+   "t": [
+    {
+     "s": "clr:grey",
+     "d": "clr:white"
+    },
+    {
+     "a": "i.texture->next"
+    }
+   ],
+   "u": [
+    "u.rect2:1/2"
+   ],
+   "data": 10
+  },
+  {
+   "s": "p3",
+   "d": "p4b",
+   "t": [
+    {
+     "d": "clr:black"
+    }
+   ],
+   "u": [
+    "u.rect2:2/2"
+   ],
+   "data": 10
+  },
+  {
+   "s": "p4",
+   "d": "p5",
+   "t": [
+    {
+     "s": "clr:grey",
+     "d": "clr:white"
+    },
+    {
+     "i": "i.texture",
+     "l": [
+      "appearance:smooth",
+      "appearance:rough",
+      "appearance:grain"
+     ]
+   }
+   ],
+   "u": [
+    "u.rect1:1/1"
+   ],
+   "data": 10
+  },
+  {
+   "s": "p4b",
+   "d": "p5",
+   "t": [
+    {
+     "d": "clr2:greyish"
+    }
+   ],
+   "u": [
+    "u.rect1:1/1"
+   ],
+   "data": 10
+  },
+  {
+   "s": "p5",
+   "d": "p2",
+   "t": [
+    {
+     "d": "clr:black"
+    }
+   ],
+   "u": [
+    "u.rect1:1/1"
+   ],
+   "data": 10
+  }
+ ]
+}

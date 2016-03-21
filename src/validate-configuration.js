@@ -290,7 +290,7 @@ const buildConf = ( conf ) => {
   const regexes = {
     renderers: graphDao => `r${sep}${regexAnyKey}`,
     transitions: graphDao => `${regexAnyKey}`,
-    transitionsItem: graphDao => `${regexAnyKey}`,
+    transitionsItem: graphDao => '[A-Za-z0-9]{2,10}',
     iterators: graphDao => `i${sep}${regexAnyKey}`,
     aliases: graphDao => `${regexAnyKey}`,
     aliasesItem: graphDao => `${regexAnyKey}`,
@@ -304,7 +304,7 @@ const buildConf = ( conf ) => {
   const validators = {
     natives,
     uniqueData: graphDao => graphDao.valid().object().min( 1 ).required(),
-    transitionData: graphDao => graphDao.valid().number().required(),
+    transitionData: graphDao => graphDao.valid().array(),
     edgeData: graphDao => graphDao.valid().number().required()
   };
   return { validators, regexes };
