@@ -41,7 +41,7 @@ const tagSchema = Joi.string().uri().min( 1 ).max( 255 ).description( 'tag' ).re
 const tagsSchema = Joi.array().items( tagSchema ).max( 20 ).optional();
 
 
-const regexAnyKey = '[A-Za-z0-9_-.:/#]{1,100}';
+const regexAnyKey = '[^*]{1,100}';
 
 const structureTypeKeys = _.keys( structureTypes );
 
@@ -52,9 +52,9 @@ const authorSchema = Joi.object().keys( {
 } ).required();
 
 const constraint = Joi.object().keys( {
-  min: Joi.number().integer().positive().min( 1 ).default( 1 ).description( 'minimum size of the array' ),
-  max: Joi.number().integer().positive().default( 1000 ).greater( Joi.ref( 'min' ) ).description( 'maximum size of the array' ),
-  multiple: Joi.number().integer().positive().min( 1 ).default( 1 ).description( 'size of the array is a multiple' ),
+  min: Joi.number().integer().min( 1 ).default( 1 ).description( 'minimum size of the array' ),
+  max: Joi.number().integer().min( 1 ).default( 1000 ).greater( Joi.ref( 'min' ) ).description( 'maximum size of the array' ),
+  multiple: Joi.number().integer().min( 1 ).default( 1 ).description( 'size of the array is a multiple' ),
   flags: Joi.array().items( Joi.string().valid( [ 'uniq', 'opt', 'facets', 'pos' ] ) ).unique().optional(),
 } ).required();
 
@@ -95,7 +95,7 @@ const constraintOrDefault = ( c, structure ) => {
   const maybeUnique = v => flags.includes( 'uniq' ) ? v.unique() : v;
   const maybeOptional = v => flags.includes( 'opt' ) ? v.optional() : v;
   const maybeMultiple = v => c.multiple === 1 ? v : v.multiple( c.v );
-  const maybePositive = v => flags.includes( 'pos' ) ? v.positive() : v;
+  const maybePositive = v => flags.includes( 'pos' ) ? v.min( 0 ) : v;
   const multiple = c.multiple ? c.multiple : 1;
   const min = c.min ? multiple * c.min : multiple;
   const max = c.max ? multiple * c.max : 1000 * multiple;
@@ -139,7 +139,6 @@ const regexOfSpaceList = ( token, c ) => {
 
 const stringJoin = c => regexOfSpaceList( '\\S+', c );
 const intJoin = c => c.isPositive ? regexOfSpaceList( '\\d+', c ) : regexOfSpaceList( '-?\\d+', c );
-//const xJoin = c => c.isPositive ? `^\d+[/]\d*[1-9](\s\d+[/]\d*[1-9])${c.min2max}$` : `^[-]?\d+[/]\d*[1-9](\s[-]?\d+[/]\d*[1-9])${c.min2max}$`
 const xJoin = c => c.isPositive ? regexOfSpaceList( '\\d+/\\d*[1-9]', c ) : regexOfSpaceList( '[-]?\\d+/\\d*[1-9]', c );
 
 const joinOfString = ( v, c ) => joinOfType( v, c, stringJoin( c ) );
@@ -270,52 +269,50 @@ const structureToSchema = ( graphDao, structure ) => {
     description: descriptionSchema,
     comment: commentSchema,
     tags: tagsSchema
-  } ).required();
+  } );
 
   return schema;
 };
 
-const buildNativeSchema = graphDao => {
-  const native = graphDao => graphDao.valid().object().min( 1 ).required();
-  const renderer = graphDao => graphDao.valid().string().max( 4 ).required();
-  const nodeSelect = graphDao => graphDao.valid().string().max( 5 ).required();
+const buildNativeSchema = ( nativeMeta ) => {
+  const schemaNative = graphDao =>  {
+    return _.zipObject( nativeMeta.conf, _.fill( Array( nativeMeta.conf.length ), graphDao.valid().string().optional().max( 1000 ) ) );
+  };
+  const native = graphDao => graphDao.valid().object().keys( schemaNative( graphDao ) );
+  const schemaRenderers = graphDao =>  _.map( nativeMeta.rendering.structures, structure => structureToSchema( graphDao, structure ) );
+  const renderer = graphDao => graphDao.valid().array().items( schemaRenderers( graphDao ) );
+  const nodeSelect = renderer;
   return { native, renderer, nodeSelect };
 };
 
-const build = ( conf ) => {
-  validators = {
-    natives: {
-      metadata: {
-        native: graphDao => graphDao.valid().object().min( 1 ).required(),
-        renderer: graphDao => graphDao.valid().string().max( 4 ).required(),
-        nodeSelect: graphDao => graphDao.valid().string().max( 5 ).required()
-      },
-      path: {
-        native: graphDao => graphDao.valid().object().min( 2 ).required(),
-        renderer: graphDao => graphDao.valid().number().required(),
-        nodeSelect: graphDao => graphDao.valid().boolean().required()
-      }
-    },
-    uniqueData: graphDao => graphDao.valid().object().min( 1 ).required(),
-    transitionData: graphDao => graphDao.valid().number().required(),
-    edgeData: graphDao => graphDao.valid().number().required()
-  };
-  regexes = {
-    renderers: graphDao => `${regexAnyKey}`,
+const buildConf = ( conf ) => {
+  const sep = '[_.-]';
+  const regexes = {
+    renderers: graphDao => `r${sep}${regexAnyKey}`,
     transitions: graphDao => `${regexAnyKey}`,
-    transitionsItem: graphDao => `${regexAnyKey}`,
-    iterators: graphDao => `${regexAnyKey}`,
+    transitionsItem: graphDao => '[A-Za-z0-9]{2,10}',
+    iterators: graphDao => `i${sep}${regexAnyKey}`,
     aliases: graphDao => `${regexAnyKey}`,
     aliasesItem: graphDao => `${regexAnyKey}`,
-    uniques: graphDao => `${regexAnyKey}`,
+    uniques: graphDao => `u${sep}${regexAnyKey}`,
     nodes: graphDao => `${regexAnyKey}`
+  };
+  const nativesConf = _.flatten( _.map( conf.plugins, plugin => plugin.natives ) );
+  const nativesKeys = _.map( nativesConf,  nat => nat.name );
+  const nativesValidators = _.map( nativesConf,  nat => buildNativeSchema( nat ) );
+  const natives = _.zipObject( nativesKeys, nativesValidators );
+  const validators = {
+    natives,
+    uniqueData: graphDao => graphDao.valid().object().min( 1 ).required(),
+    transitionData: graphDao => graphDao.valid().array(),
+    edgeData: graphDao => graphDao.valid().number().required()
   };
   return { validators, regexes };
 };
 
 export default function ( conf ) {
   const assertValid = () => Joi.assert( conf, confSchema );
-  const build = () => 'not yet';
+  const build = () => buildConf( conf );
 
-  return { assertValid, structureToSchema, build };
+  return { assertValid, structureToSchema, buildNativeSchema, build };
 }

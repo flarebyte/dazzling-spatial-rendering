@@ -19,13 +19,15 @@ const validateStructureToSchema = ( structure, value ) => {
   return _.isNull( result.error ) ? result.value : result.error.message;
 };
 
+const validationIncludesMsg = ( value, validator, message ) => Joi.validate( value, validator ).error.message.includes( message );
+
 /** Strings*/
 test( 'validate-configuration should validate a list of strings', ( t ) => {
   t.plan( 5 );
   const structure = {
     description : 'my description',
     type: 'strings',
-    tags: [ 'tag1' ],
+    tags: [ 'tag1', 'color:rgb=ffa9c3', 'color:rgb/ffa9c3' ],
     constraints: [
       {
         min: 2,
@@ -211,7 +213,7 @@ test( 'validate-configuration should validate a list of positive integers', ( t 
     ]
   };
   const v1 = {
-    L: [ 12, 14, 100, 1034 ],
+    L: [ 12, 14, 0, 1034 ],
     description : 'some title for value',
     title : 'some desc for value',
     tags: [ 'curie:tag1' ]
@@ -232,7 +234,7 @@ test( 'validate-configuration should validate a list of positive integers', ( t 
     L: [ 1, -2, 3 ],
   } );
 
-  t.ok( e4.includes( 'must be a positive number' ), 'e4: ' + e4 );
+  t.ok( e4.includes( 'must be larger than or equal to 0' ), 'e4: ' + e4 );
 
   const e5 = validateStructureToSchema( structure, {
     L: [ 1, 2, 2 ],
@@ -338,7 +340,7 @@ test( 'validate-configuration should validate a list of integers ij with facets'
   };
   const f = [ 'facet' ];
   const v1 = {
-    L: [ { i: 1, j: 23, f }, { i: -1, j: 24, f }, { i: 3, j: 2, f } ],
+    L: [ { i: 1, j: 23, f }, { i: -1, j: 0, f }, { i: 3, j: 2, f } ],
   };
   t.deepEqual( validateStructureToSchema( structure, v1 ), v1, 'v1' );
 
@@ -748,4 +750,84 @@ test( 'validate-configuration should validate a color with facets', ( t ) => {
   };
   t.deepEqual( validateStructureToSchema( structure, v6 ), v6, 'v6 - RGB hexa' );
 
+} );
+
+/** build Native Schema*/
+test( 'validate-configuration should validate the native sections', ( t ) => {
+  t.plan( 9 );
+  const structureColor = {
+    description : 'my color',
+    type: 'colors',
+    tags: [ 'tag1' ],
+    flags: [ 'facets' ],
+    constraints: [
+      {
+        min: 2,
+        max: 5,
+      }
+    ]
+  };
+  const structureXY = {
+    description : 'my XY',
+    type: 'xy',
+    tags: [ 'tag1' ],
+    flags: [ 'facets' ],
+    constraints: [
+      {
+        min: 1,
+        max: 2,
+        multiple: 3
+      }
+    ]
+  };
+
+  const sampleNative = {
+    name: 'native1',
+    conf: [ 'sizeUnit' ],
+    rendering:
+    {
+      structures: [ structureColor, structureXY ]
+    }
+  };
+
+  const graphDao = { valid: () => Joi };
+  const validateConf = validateConfiguration( config.valid );
+  const nativeSchema = validateConf.buildNativeSchema( sampleNative );
+
+  const f = [ 'facet' ];
+  const col1 = { R: 201, G: 102, B: 40 };
+  const colorList = {
+    title: 'colorList',
+    description: 'Matrix 8 by 8',
+    tags: [
+      'dc:title',
+      'other:tag22/a/b#main'
+    ],
+    L: [ { col: { R: 200, G: 100, B: 50, A: 122 }, f }, { col: col1, f } ],
+  };
+
+  const xyList = {
+    title: 'xyList',
+    L: [ { x: '1/2', y: '1000/20001', f }, { x: '-1/2', y: '-2/3', f }, { x: '3/4', y: '4/4', f } ],
+  };
+
+
+  t.equal( Joi.validate( [ colorList, xyList ], nativeSchema.renderer( graphDao ) ).error, null, 'valid renderer' );
+  t.equal( Joi.validate( [ colorList ], nativeSchema.renderer( graphDao ) ).error, null, 'valid renderer - just colorList' );
+  t.equal( Joi.validate( [ xyList ], nativeSchema.renderer( graphDao ) ).error, null, 'valid renderer - just xyList' );
+  t.equal( Joi.validate( [ ], nativeSchema.renderer( graphDao ) ).error, null, 'valid renderer - no data' );
+  t.equal( Joi.validate( [ colorList, xyList ], nativeSchema.nodeSelect( graphDao ) ).error, null, 'valid node select' );
+  t.ok( Joi.validate( [ 'invalid data' ], nativeSchema.renderer( graphDao ) ).error.message.includes( 'does not match any of the allowed types' ), 'invalid renderer' );
+  t.equal( Joi.validate( { sizeUnit: 'anyValue' }, nativeSchema.native( graphDao ) ).error, null, 'valid native' );
+  t.equal( Joi.validate( { }, nativeSchema.native( graphDao ) ).error, null, 'valid native - empty' );
+  t.ok( Joi.validate( { invalidKey: 'anyValue' }, nativeSchema.native( graphDao ) ).error.message.includes( '"invalidKey" is not allowed' ), 'invalid native' );
+
+} );
+
+test( 'validate-configuration should build configuration', ( t ) => {
+  t.plan( 2 );
+  const validateConf = validateConfiguration( config.valid );
+  const build = validateConf.build();
+  t.deepEqual( _.keys( build ).sort(), [ 'regexes', 'validators' ], 'root keys' );
+  t.deepEqual( _.keys( build.validators.natives ).sort(), [ 'native1', 'native2A', 'native2B' ], 'natives' );
 } );

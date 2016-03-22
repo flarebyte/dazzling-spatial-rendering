@@ -48,7 +48,7 @@
   "homepage": "https://github.com/flarebyte/dazzling-spatial-rendering#readme",
   "devDependencies": {
     "babel-cli": "^6.5.1",
-    "babel-core": "^6.5.2",
+    "babel-core": "^6.7.2",
     "babel-eslint": "^5.0.0",
     "babel-preset-es2015": "^6.5.0",
     "coveralls": "^2.11.8",
@@ -62,10 +62,10 @@
     "watch": "*"
   },
   "dependencies": {
-    "dazzling-graph-progressive": "^0.4.0",
-    "joi": "^8.0.4",
-    "lodash": "^4.5.1",
-    "mathjs": "^3.0.0",
+    "dazzling-graph-progressive": "^0.5.0",
+    "joi": "^8.0.5",
+    "lodash": "^4.6.1",
+    "mathjs": "^3.1.0",
     "string": "^3.3.1"
   }
 }
