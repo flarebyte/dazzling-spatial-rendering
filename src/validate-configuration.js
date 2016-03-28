@@ -274,16 +274,26 @@ const structureToSchema = ( graphDao, structure ) => {
   return schema;
 };
 
+const csl = value => {
+  console.log( value );
+  return value;
+};
+
+const buildSchemaRenderer = ( nativeMeta ) => {
+  return graphDao =>  _.map( nativeMeta.rendering.structures, structure => structureToSchema( graphDao, structure ) );
+};
+
 const buildNativeSchema = ( nativeMeta ) => {
   const schemaNative = graphDao =>  {
     return _.zipObject( nativeMeta.conf, _.fill( Array( nativeMeta.conf.length ), graphDao.valid().string().optional().max( 1000 ) ) );
   };
   const native = graphDao => graphDao.valid().object().keys( schemaNative( graphDao ) );
-  const schemaRenderers = graphDao =>  _.map( nativeMeta.rendering.structures, structure => structureToSchema( graphDao, structure ) );
+  const schemaRenderers = buildSchemaRenderer( nativeMeta );
   const renderer = graphDao => graphDao.valid().array().items( schemaRenderers( graphDao ) );
   const nodeSelect = renderer;
   return { native, renderer, nodeSelect };
 };
+
 
 const buildConf = ( conf ) => {
   const sep = '[_.-]';
@@ -301,10 +311,15 @@ const buildConf = ( conf ) => {
   const nativesKeys = _.map( nativesConf,  nat => nat.name );
   const nativesValidators = _.map( nativesConf,  nat => buildNativeSchema( nat ) );
   const natives = _.zipObject( nativesKeys, nativesValidators );
+  const transitionValidators = graphDao => {
+    const rdrs =  _.uniq( _.flatten( _.map( nativesConf,  nat =>  buildSchemaRenderer( nat ) ) ) );
+    return _.map( rdrs, rdr => rdr( graphDao ) );
+  };
+
   const validators = {
     natives,
     uniqueData: graphDao => graphDao.valid().object().min( 1 ).required(),
-    transitionData: graphDao => graphDao.valid().array(),
+    transitionData: graphDao => graphDao.valid().array().items( transitionValidators( graphDao ) ),
     edgeData: graphDao => graphDao.valid().number().required()
   };
   return { validators, regexes };
