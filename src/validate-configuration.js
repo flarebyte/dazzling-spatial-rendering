@@ -274,11 +274,6 @@ const structureToSchema = ( graphDao, structure ) => {
   return schema;
 };
 
-const csl = value => {
-  console.log( value );
-  return value;
-};
-
 const buildSchemaRenderer = ( nativeMeta ) => {
   return graphDao =>  _.map( nativeMeta.rendering.structures, structure => structureToSchema( graphDao, structure ) );
 };
@@ -320,7 +315,9 @@ const buildConf = ( conf ) => {
     natives,
     uniqueData: graphDao => graphDao.valid().object().min( 1 ).required(),
     transitionData: graphDao => graphDao.valid().array().items( transitionValidators( graphDao ) ),
-    edgeData: graphDao => graphDao.valid().number().required()
+    edgeData: graphDao => graphDao.valid().object().keys( {
+      k: posFractionSchema( graphDao.valid() ).required()
+    } )
   };
   return { validators, regexes };
 };
